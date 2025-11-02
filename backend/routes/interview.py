@@ -37,8 +37,7 @@ router = APIRouter(prefix="/interview", tags=["interview"])
 async def create_session(req: CreateSessionRequest, user=Depends(auth_user)):
     if not req.consentRecording or not req.consentAntiCheat:
         raise HTTPException(status_code=400, detail="consent_required")
-    if db is None:
-        raise HTTPException(status_code=500, detail="database_not_connected")
+    db = get_database()
     session_id = new_id()
     now = datetime.utcnow().isoformat()
     doc = {
