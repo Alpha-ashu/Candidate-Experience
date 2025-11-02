@@ -165,11 +165,31 @@ export function PreCheck({ onNavigate, sessionData }: PreCheckProps) {
           Validating your environment before entering the interview room
         </p>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <Alert className="mb-6 border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-700">
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {sessionData?.paused && (
         <Alert className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             Your session was paused due to compliance. Please re-run checks to resume.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {!sessionData?.sessionId && (
+        <Alert className="mb-6 border-yellow-200 bg-yellow-50">
+          <AlertCircle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-yellow-800">
+            Session data not found. Please go back and set up the interview again.
           </AlertDescription>
         </Alert>
       )}
