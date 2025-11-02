@@ -17,3 +17,11 @@ async def disconnect() -> None:
     if client:
         client.close()
         client = None
+
+
+def get_database() -> AsyncIOMotorDatabase:
+    """Get the database instance"""
+    global db
+    if db is None:
+        raise RuntimeError("Database not connected. Call connect() first.")
+    return db
