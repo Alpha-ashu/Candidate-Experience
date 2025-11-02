@@ -145,6 +145,16 @@ export function SessionSetup({ onNavigate }: SessionSetupProps) {
         <p className="text-slate-600">Configure your interview session parameters</p>
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <Alert className="mb-6 border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-700">
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-6">
         {/* Role Selection */}
         <Card>
