@@ -18,6 +18,7 @@ from .routes import interview as interview_routes
 from .routes import media as media_routes
 from .routes import ws as ws_routes
 from .routes import career as career_routes
+from .routes import live_interview as live_interview_routes
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
