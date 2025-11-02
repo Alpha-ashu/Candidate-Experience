@@ -89,29 +89,29 @@ export function CandidateHome({ onNavigate }: CandidateHomeProps) {
             <Button
               variant="outline"
               className="h-auto flex-col items-start p-6 gap-2"
-              disabled
+              onClick={() => onNavigate('live-interview')}
             >
               <Calendar className="h-6 w-6 mb-2" />
               <span>Book 1:1 Live Session</span>
-              <span className="text-xs opacity-60">Coming Soon</span>
+              <span className="text-xs opacity-80">Practice with real interviewers</span>
             </Button>
             <Button
               variant="outline"
               className="h-auto flex-col items-start p-6 gap-2"
-              disabled
+              onClick={() => onNavigate('career-path')}
             >
               <TrendingUp className="h-6 w-6 mb-2" />
               <span>Plan Career Path</span>
-              <span className="text-xs opacity-60">Coming Soon</span>
+              <span className="text-xs opacity-80">AI-powered career guidance</span>
             </Button>
             <Button
               variant="outline"
               className="h-auto flex-col items-start p-6 gap-2"
-              disabled
+              onClick={() => onNavigate('resume-analyzer')}
             >
               <FileText className="h-6 w-6 mb-2" />
               <span>Check Resume & ATS</span>
-              <span className="text-xs opacity-60">Coming Soon</span>
+              <span className="text-xs opacity-80">Optimize for job applications</span>
             </Button>
           </CardContent>
         </Card>
