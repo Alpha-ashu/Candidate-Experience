@@ -9,6 +9,9 @@ class LoginRequest(BaseModel):
 
 class UserJWT(BaseModel):
     token: str
+    refresh_token: Optional[str] = None
+    device_id: Optional[str] = None
+    mfa_required: Optional[bool] = False
 
 
 class CreateSessionRequest(BaseModel):
