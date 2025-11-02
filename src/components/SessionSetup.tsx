@@ -27,6 +27,8 @@ export function SessionSetup({ onNavigate }: SessionSetupProps) {
   const [consentRecording, setConsentRecording] = useState(false);
   const [consentAntiCheat, setConsentAntiCheat] = useState(false);
   const [mcqEnabled, setMcqEnabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const roleCategories = [
     'QA / Quality Assurance',
