@@ -265,30 +265,32 @@ export function PreCheck({ onNavigate, sessionData }: PreCheckProps) {
           </Button>
           <Button
             onClick={async () => {
-              if (!canProceed) return;
+              if (!canProceed || !sessionData?.sessionId) {
+                console.error('Missing session data');
+                return;
+              }
               try {
                 const checksObj: any = {};
                 checks.forEach((c) => {
                   checksObj[c.id] = { status: c.status, message: c.message };
                 });
+
                 // minimal sample anti-cheat batch during pre-check
                 const events = [
                   { sessionId: sessionData.sessionId, seq: 1, type: 'FULLSCREEN_READY', details: { ready: true }, ts: new Date().toISOString(), prevHash: '' },
                 ];
 
-                // Add some mock anti-cheat checks
-                const mockChecks: any = {};
-                checks.forEach((c) => {
-                  mockChecks[c.id] = { status: c.status, message: c.message };
-                });
                 // Ensure ACET
                 let acet = sessionData.acet;
                 if (!acet) {
                   try {
                     const a = await issueAcet(sessionData.sessionId);
                     acet = a.acet;
-                  } catch {}
+                  } catch (e) {
+                    console.error('Failed to issue ACET:', e);
+                  }
                 }
+
                 const pre = await submitPrecheck(sessionData.sessionId, acet, checksObj, events);
                 if (!pre.canProceed) return;
                 const started = await startInterview(sessionData.sessionId);
