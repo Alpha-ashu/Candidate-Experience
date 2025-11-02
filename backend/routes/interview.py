@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 import multiprocessing as mp
 
-from ..db import db
+from ..db import get_database
 from ..security.jwt import mint_jwt
 from ..security.deps import auth_user, auth_ist, auth_ai_proxy, auth_acet, auth_session_cookie
 from ..schemas import (
