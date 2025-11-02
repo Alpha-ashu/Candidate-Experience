@@ -142,5 +142,59 @@ app.include_router(ws_routes.router)
 
 
 @app.get("/healthz")
-async def healthz():
-    return {"ok": True}
+@limiter.limit("100/minute")
+async def healthz(request: Request):
+    """Enhanced health check endpoint with system metrics"""
+    try:
+        # System metrics
+        cpu_percent = psutil.cpu_percent(interval=1)
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+
+        # Database connection check
+        from .db import get_database
+        try:
+            db = get_database()
+            await db.command("ping")
+            database_status = "healthy"
+        except Exception as e:
+            logger.error(f"Database health check failed: {e}")
+            database_status = "unhealthy"
+
+        health_data = {
+            "status": "healthy",
+            "timestamp": time.time(),
+            "version": "2.0.0",
+            "system": {
+                "cpu_percent": cpu_percent,
+                "memory_percent": memory.percent,
+                "memory_available_gb": memory.available / (1024**3),
+                "disk_percent": disk.percent,
+                "disk_free_gb": disk.free / (1024**3),
+            },
+            "services": {
+                "database": database_status,
+            },
+            "environment": settings.environment
+        }
+
+        # Determine overall health status
+        if database_status == "unhealthy" or cpu_percent > 90 or memory.percent > 90:
+            health_data["status"] = "degraded"
+            return JSONResponse(
+                status_code=503,
+                content=health_data
+            )
+
+        return health_data
+
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "unhealthy",
+                "timestamp": time.time(),
+                "error": str(e)
+            }
+        )
