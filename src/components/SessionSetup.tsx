@@ -9,7 +9,8 @@ import { Checkbox } from './ui/checkbox';
 import { Badge } from './ui/badge';
 import { Slider } from './ui/slider';
 import { Alert, AlertDescription } from './ui/alert';
-import { X, Upload, Info } from 'lucide-react';
+import { X, Upload, Info, Loader2 } from 'lucide-react';
+import { createSession, login } from '../api/client';
 
 interface SessionSetupProps {
   onNavigate: (page: string, data?: any) => void;
