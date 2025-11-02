@@ -1,5 +1,15 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import JSONResponse
+import time
+import uuid
+import logging
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+import psutil
+import os
 
 from .config import settings
 from .db import connect, disconnect
@@ -7,6 +17,14 @@ from .routes import auth as auth_routes
 from .routes import interview as interview_routes
 from .routes import media as media_routes
 from .routes import ws as ws_routes
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Rate limiting
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
 
 
 app = FastAPI(title="Candidate Experience Backend")
