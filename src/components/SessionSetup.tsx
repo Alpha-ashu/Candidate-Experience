@@ -77,19 +77,65 @@ export function SessionSetup({ onNavigate }: SessionSetupProps) {
 
   const canProceed = roleCategory && interviewModes.length > 0 && consentRecording && consentAntiCheat;
 
-  const handleStartSession = () => {
-    const sessionData = {
-      roleCategory,
-      interviewModes,
-      questionCount: questionCount[0],
-      duration: duration[0],
-      difficulty,
-      companies,
-      mcqEnabled,
-      consentRecording,
-      consentAntiCheat,
-    };
-    onNavigate('precheck', sessionData);
+  const handleStartSession = async () => {
+    if (!canProceed) return;
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // Get experience values from the form
+      const experienceYears = parseInt((document.getElementById('experience-years') as HTMLInputElement)?.value || '5');
+      const experienceMonths = parseInt((document.getElementById('experience-months') as HTMLInputElement)?.value || '0');
+      const language = (document.getElementById('language') as HTMLSelectElement)?.value || 'en-us';
+
+      // First, ensure we have a user token
+      let userJwt = localStorage.getItem('cxUserJwt');
+      if (!userJwt) {
+        // Auto-login with demo user
+        const loginResponse = await login('demo@candidate.com');
+        userJwt = loginResponse.token;
+        localStorage.setItem('cxUserJwt', userJwt);
+      }
+
+      // Create session payload
+      const sessionPayload = {
+        roleCategory,
+        experienceYears,
+        experienceMonths,
+        modes: interviewModes,
+        questionCount: questionCount[0],
+        durationLimit: duration[0],
+        language,
+        difficulty,
+        jobDescription: (document.getElementById('job-description') as HTMLTextAreaElement)?.value || undefined,
+        companyTargets: companies,
+        includeCuratedQuestions: (document.getElementById('curated-questions') as HTMLInputElement)?.checked ?? true,
+        allowAIGenerated: (document.getElementById('ai-generated') as HTMLInputElement)?.checked ?? true,
+        enableMCQ: mcqEnabled,
+        consentRecording,
+        consentAntiCheat,
+        consentTimestamp: new Date().toISOString(),
+      };
+
+      // Create the session
+      const sessionResponse = await createSession(userJwt, sessionPayload);
+
+      // Navigate to precheck with session data
+      const sessionData = {
+        ...sessionPayload,
+        sessionId: sessionResponse.sessionId,
+        ist: sessionResponse.ist,
+        nextStep: sessionResponse.nextStep,
+      };
+
+      onNavigate('precheck', sessionData);
+    } catch (error) {
+      console.error('Failed to create session:', error);
+      setError('Failed to create session. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
