@@ -92,6 +92,8 @@ export function PreCheck({ onNavigate, sessionData }: PreCheckProps) {
 
   const [overallProgress, setOverallProgress] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  const [isStartingInterview, setIsStartingInterview] = useState(false);
+  const [error, setError] = useState('');
 
   const runCheck = (checkId: string) => {
     setChecks(prev => prev.map(c =>
@@ -163,11 +165,31 @@ export function PreCheck({ onNavigate, sessionData }: PreCheckProps) {
           Validating your environment before entering the interview room
         </p>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <Alert className="mb-6 border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-700">
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {sessionData?.paused && (
         <Alert className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             Your session was paused due to compliance. Please re-run checks to resume.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {!sessionData?.sessionId && (
+        <Alert className="mb-6 border-yellow-200 bg-yellow-50">
+          <AlertCircle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-yellow-800">
+            Session data not found. Please go back and set up the interview again.
           </AlertDescription>
         </Alert>
       )}
@@ -265,37 +287,65 @@ export function PreCheck({ onNavigate, sessionData }: PreCheckProps) {
           </Button>
           <Button
             onClick={async () => {
-              if (!canProceed) return;
+              if (!canProceed || !sessionData?.sessionId) {
+                setError('Missing session data. Please go back and set up the interview again.');
+                return;
+              }
+
+              setIsStartingInterview(true);
+              setError('');
+
               try {
                 const checksObj: any = {};
                 checks.forEach((c) => {
                   checksObj[c.id] = { status: c.status, message: c.message };
                 });
+
                 // minimal sample anti-cheat batch during pre-check
                 const events = [
                   { sessionId: sessionData.sessionId, seq: 1, type: 'FULLSCREEN_READY', details: { ready: true }, ts: new Date().toISOString(), prevHash: '' },
                 ];
+
                 // Ensure ACET
                 let acet = sessionData.acet;
                 if (!acet) {
                   try {
                     const a = await issueAcet(sessionData.sessionId);
                     acet = a.acet;
-                  } catch {}
+                  } catch (e) {
+                    console.error('Failed to issue ACET:', e);
+                  }
                 }
+
                 const pre = await submitPrecheck(sessionData.sessionId, acet, checksObj, events);
-                if (!pre.canProceed) return;
+                if (!pre.canProceed) {
+                  setError('Pre-check failed. Please resolve any issues and try again.');
+                  return;
+                }
+
                 const started = await startInterview(sessionData.sessionId);
                 const merged = { ...sessionData, ...started };
                 try { localStorage.setItem('cxSession', JSON.stringify(merged)); } catch {}
                 onNavigate('interview', merged);
-              } catch (e) {
+              } catch (e: any) {
                 console.error('Precheck/start failed', e);
+                setError(`Failed to start interview: ${e.message || 'Unknown error'}`);
+              } finally {
+                setIsStartingInterview(false);
               }
             }}
-            disabled={!canProceed}
+            disabled={!canProceed || isStartingInterview}
           >
-            {sessionData?.paused ? 'Resume Interview' : 'Proceed to Interview'}
+            {isStartingInterview ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Starting Interview...
+              </>
+            ) : (
+              <>
+                {sessionData?.paused ? 'Resume Interview' : 'Proceed to Interview'}
+              </>
+            )}
           </Button>
         </div>
       </div>

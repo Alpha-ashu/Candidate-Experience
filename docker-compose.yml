@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: firstround-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: cx
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - firstround-network
+
+  # Redis (for caching and session storage)
+  redis:
+    image: redis:7.2-alpine
+    container_name: firstround-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - firstround-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: firstround-backend
+    restart: unless-stopped
+    environment:
+      # Database
+      - mongodb_uri=mongodb://admin:password@mongodb:27017/cx?authSource=admin
+      - db_name=cx
+
+      # Environment
+      - environment=development
+
+      # Auth
+      - auth_secret=your-super-secret-key-change-in-production
+      - refresh_token_secret=your-refresh-secret-key-change-in-production
+      - cookie_secure=false
+      - cookie_domain=localhost
+
+      # CORS
+      - allowed_origins=["http://localhost:3000","http://localhost"]
+
+      # AI Providers (Add your API keys here)
+      - openai_api_key=your-openai-api-key
+      - google_api_key=your-google-api-key
+      - ai_provider=openai
+
+      # Feature Flags
+      - enable_mfa=false
+      - enable_oauth=false
+      - enable_live_interview=true
+      - enable_career_tools=true
+      - enable_resume_analyzer=true
+
+      # Redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__  # Exclude Python cache
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - firstround-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: firstround-frontend
+    restart: unless-stopped
+    environment:
+      - VITE_API_BASE=http://localhost:8000
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - firstround-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  firstround-network:
+    driver: bridge

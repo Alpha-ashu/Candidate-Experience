@@ -9,7 +9,8 @@ import { Checkbox } from './ui/checkbox';
 import { Badge } from './ui/badge';
 import { Slider } from './ui/slider';
 import { Alert, AlertDescription } from './ui/alert';
-import { X, Upload, Info } from 'lucide-react';
+import { X, Upload, Info, Loader2 } from 'lucide-react';
+import { createSession, login } from '../api/client';
 
 interface SessionSetupProps {
   onNavigate: (page: string, data?: any) => void;
@@ -26,6 +27,8 @@ export function SessionSetup({ onNavigate }: SessionSetupProps) {
   const [consentRecording, setConsentRecording] = useState(false);
   const [consentAntiCheat, setConsentAntiCheat] = useState(false);
   const [mcqEnabled, setMcqEnabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const roleCategories = [
     'QA / Quality Assurance',
@@ -74,19 +77,65 @@ export function SessionSetup({ onNavigate }: SessionSetupProps) {
 
   const canProceed = roleCategory && interviewModes.length > 0 && consentRecording && consentAntiCheat;
 
-  const handleStartSession = () => {
-    const sessionData = {
-      roleCategory,
-      interviewModes,
-      questionCount: questionCount[0],
-      duration: duration[0],
-      difficulty,
-      companies,
-      mcqEnabled,
-      consentRecording,
-      consentAntiCheat,
-    };
-    onNavigate('precheck', sessionData);
+  const handleStartSession = async () => {
+    if (!canProceed) return;
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // Get experience values from the form
+      const experienceYears = parseInt((document.getElementById('experience-years') as HTMLInputElement)?.value || '5');
+      const experienceMonths = parseInt((document.getElementById('experience-months') as HTMLInputElement)?.value || '0');
+      const language = (document.getElementById('language') as HTMLSelectElement)?.value || 'en-us';
+
+      // First, ensure we have a user token
+      let userJwt = localStorage.getItem('cxUserJwt');
+      if (!userJwt) {
+        // Auto-login with demo user
+        const loginResponse = await login('demo@candidate.com');
+        userJwt = loginResponse.token;
+        localStorage.setItem('cxUserJwt', userJwt);
+      }
+
+      // Create session payload
+      const sessionPayload = {
+        roleCategory,
+        experienceYears,
+        experienceMonths,
+        modes: interviewModes,
+        questionCount: questionCount[0],
+        durationLimit: duration[0],
+        language,
+        difficulty,
+        jobDescription: (document.getElementById('job-description') as HTMLTextAreaElement)?.value || undefined,
+        companyTargets: companies,
+        includeCuratedQuestions: (document.getElementById('curated-questions') as HTMLInputElement)?.checked ?? true,
+        allowAIGenerated: (document.getElementById('ai-generated') as HTMLInputElement)?.checked ?? true,
+        enableMCQ: mcqEnabled,
+        consentRecording,
+        consentAntiCheat,
+        consentTimestamp: new Date().toISOString(),
+      };
+
+      // Create the session
+      const sessionResponse = await createSession(userJwt, sessionPayload);
+
+      // Navigate to precheck with session data
+      const sessionData = {
+        ...sessionPayload,
+        sessionId: sessionResponse.sessionId,
+        ist: sessionResponse.ist,
+        nextStep: sessionResponse.nextStep,
+      };
+
+      onNavigate('precheck', sessionData);
+    } catch (error) {
+      console.error('Failed to create session:', error);
+      setError('Failed to create session. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -95,6 +144,16 @@ export function SessionSetup({ onNavigate }: SessionSetupProps) {
         <h1 className="mb-2">AI Mock Interview Setup</h1>
         <p className="text-slate-600">Configure your interview session parameters</p>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <Alert className="mb-6 border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-700">
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-6">
         {/* Role Selection */}
@@ -360,9 +419,16 @@ export function SessionSetup({ onNavigate }: SessionSetupProps) {
             </Button>
             <Button
               onClick={handleStartSession}
-              disabled={!canProceed}
+              disabled={!canProceed || isLoading}
             >
-              Run Pre-Check
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating Session...
+                </>
+              ) : (
+                'Run Pre-Check'
+              )}
             </Button>
           </div>
         </div>
