@@ -10,6 +10,7 @@ import base64
 from fastapi.responses import JSONResponse
 import secrets
 import time
+import uuid
 
 from ..config import settings
 from ..security.jwt import (
