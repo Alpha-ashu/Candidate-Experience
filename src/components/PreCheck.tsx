@@ -275,6 +275,12 @@ export function PreCheck({ onNavigate, sessionData }: PreCheckProps) {
                 const events = [
                   { sessionId: sessionData.sessionId, seq: 1, type: 'FULLSCREEN_READY', details: { ready: true }, ts: new Date().toISOString(), prevHash: '' },
                 ];
+
+                // Add some mock anti-cheat checks
+                const mockChecks: any = {};
+                checks.forEach((c) => {
+                  mockChecks[c.id] = { status: c.status, message: c.message };
+                });
                 // Ensure ACET
                 let acet = sessionData.acet;
                 if (!acet) {
