@@ -419,9 +419,16 @@ export function SessionSetup({ onNavigate }: SessionSetupProps) {
             </Button>
             <Button
               onClick={handleStartSession}
-              disabled={!canProceed}
+              disabled={!canProceed || isLoading}
             >
-              Run Pre-Check
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating Session...
+                </>
+              ) : (
+                'Run Pre-Check'
+              )}
             </Button>
           </div>
         </div>
