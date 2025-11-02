@@ -92,6 +92,8 @@ export function PreCheck({ onNavigate, sessionData }: PreCheckProps) {
 
   const [overallProgress, setOverallProgress] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  const [isStartingInterview, setIsStartingInterview] = useState(false);
+  const [error, setError] = useState('');
 
   const runCheck = (checkId: string) => {
     setChecks(prev => prev.map(c =>
