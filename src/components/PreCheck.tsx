@@ -288,9 +288,13 @@ export function PreCheck({ onNavigate, sessionData }: PreCheckProps) {
           <Button
             onClick={async () => {
               if (!canProceed || !sessionData?.sessionId) {
-                console.error('Missing session data');
+                setError('Missing session data. Please go back and set up the interview again.');
                 return;
               }
+
+              setIsStartingInterview(true);
+              setError('');
+
               try {
                 const checksObj: any = {};
                 checks.forEach((c) => {
@@ -314,18 +318,34 @@ export function PreCheck({ onNavigate, sessionData }: PreCheckProps) {
                 }
 
                 const pre = await submitPrecheck(sessionData.sessionId, acet, checksObj, events);
-                if (!pre.canProceed) return;
+                if (!pre.canProceed) {
+                  setError('Pre-check failed. Please resolve any issues and try again.');
+                  return;
+                }
+
                 const started = await startInterview(sessionData.sessionId);
                 const merged = { ...sessionData, ...started };
                 try { localStorage.setItem('cxSession', JSON.stringify(merged)); } catch {}
                 onNavigate('interview', merged);
-              } catch (e) {
+              } catch (e: any) {
                 console.error('Precheck/start failed', e);
+                setError(`Failed to start interview: ${e.message || 'Unknown error'}`);
+              } finally {
+                setIsStartingInterview(false);
               }
             }}
-            disabled={!canProceed}
+            disabled={!canProceed || isStartingInterview}
           >
-            {sessionData?.paused ? 'Resume Interview' : 'Proceed to Interview'}
+            {isStartingInterview ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Starting Interview...
+              </>
+            ) : (
+              <>
+                {sessionData?.paused ? 'Resume Interview' : 'Proceed to Interview'}
+              </>
+            )}
           </Button>
         </div>
       </div>
