@@ -1,0 +1,14 @@
+# Local env files (do not commit secrets)
+backend/.env.local
+.env
+*.env
+
+# Node build artifacts
+node_modules
+build
+.vite
+
+# Python
+__pycache__
+.pytest_cache
+*.pyc
