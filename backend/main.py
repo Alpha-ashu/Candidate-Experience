@@ -142,6 +142,7 @@ app.include_router(interview_routes.router)
 app.include_router(media_routes.router)
 app.include_router(ws_routes.router)
 app.include_router(career_routes.router)
+app.include_router(live_interview_routes.router)
 
 
 @app.get("/healthz")
