@@ -65,8 +65,7 @@ async def create_session(req: CreateSessionRequest, user=Depends(auth_user)):
 
 @router.post("/{session_id}/precheck", response_model=PrecheckResponse)
 async def submit_precheck(session_id: str, payload: PrecheckPayload, _=Depends(auth_acet)):
-    if db is None:
-        raise HTTPException(status_code=500, detail="database_not_connected")
+    db = get_database()
     sess = await db["sessions"].find_one({"_id": session_id})
     if not sess:
         raise HTTPException(status_code=404, detail="session_not_found")
